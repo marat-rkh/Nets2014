@@ -1,0 +1,22 @@
+@(bandName: String, albums: List[(controllers.BandsDbManager.Year, controllers.BandsDbManager.AlbumName)])
+
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>"Html response"</title>
+        <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
+    </head>
+    <body>
+        <h3>@bandName</h3>
+        <img src="@routes.Assets.at("images/" + bandName.toLowerCase + ".jpg")">
+        <ul>
+        @albums.map { pair =>
+            <li>
+                <p>@{"year: " + pair._1}</p>
+                <p>@{"title: " + pair._2}</p>
+            </li>
+        }
+        </ul>
+    </body>
+</html>

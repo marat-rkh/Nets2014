@@ -1,0 +1,24 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# Home page
+GET            /                                        controllers.Application.index
+
+# Map static resources from the /public folder to the /assets URL path
+GET            /assets/*file                            controllers.Assets.at(path="/public", file)
+
+# RESTful
+GET            /json/$taskId<[0-9]+>                    controllers.Application.handleGetJson(taskId: Int)
+GET            /xml/$taskId<[0-9]+>                     controllers.Application.handleGetXml(taskId: Int)
+GET            /html/$taskId<[0-9]+>                    controllers.Application.handleGetHtml(taskId: Int)
+
+PUT            /$any<(json|xml|html)(\/[0-9]*)?>        controllers.Application.make405(any)
+POST           /$any<(json|xml|html)(\/[0-9]*)?>        controllers.Application.make405(any)
+DELETE         /$any<(json|xml|html)(\/[0-9]*)?>        controllers.Application.make405(any)
+OPTIONS        /$any<(json|xml|html)(\/[0-9]*)?>        controllers.Application.make405(any)
+
+PUT            /                                        controllers.Application.handlePut()
+POST           /                                        controllers.Application.handlePost()
+DELETE         /                                        controllers.Application.handleDelete()
+OPTIONS        /                                        controllers.Application.makeRootOptions()

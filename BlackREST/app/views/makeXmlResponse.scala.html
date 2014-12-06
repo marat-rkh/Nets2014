@@ -1,0 +1,12 @@
+@(bandName: String, albums: List[(controllers.BandsDbManager.Year, controllers.BandsDbManager.AlbumName)])
+<response>
+    <band>@bandName</band>
+    <albums>
+        @{albums.map { p =>
+            <album>
+                <year>{p._1}</year>
+                <title>{p._2}</title>
+            </album> }
+        }
+    </albums>
+</response>
