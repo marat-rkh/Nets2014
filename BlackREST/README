@@ -13,6 +13,9 @@ Service contains little database with black metall bands and their discography. 
 3) immortal
 4) behemoth
 
+Protocol:
+!!! Note: all requests must be in json format so you must set content-type of the request to application/json
+
 You send PUT request of the following format:
 {
 	"name": "band name here", 
