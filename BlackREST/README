@@ -1,4 +1,33 @@
-This is your new Play application
-=================================
+Hw 1 : RESTful service about black metall bands
 
-This file will be packaged with your application, when using `activator dist`.
+Hosted here: secret-sea-5729.herokuapp.com
+
+URL tree:
+
+/ - root URL is used to receive GET (shows main page), PUT, POST, DELETE and OPTIONS requests
+/(html | xml | json)/<task_id> - receives GET requests, responces with results of PUT and POST requests to the root URL
+
+Service contains little database with black metall bands and their discography. Available bands are:
+1) burzum
+2) emperor
+3) immortal
+4) behemoth
+
+You send PUT request of the following format:
+{
+	"name": "band name here", 
+	"year": "albums will be shown starting from this year (must be a number, not string)" 
+}
+
+to get discography of the band beginning from the specified year.
+
+If you want to update the year, you should send POST request with body:
+{
+	"id": "task id (must be a number, not string)",
+	"year": "updated year (must be a number, not string)"
+}
+
+To delete task, send DELETE request with body:
+{
+	"id": "task id to delete (must be a number, not string)"
+}
