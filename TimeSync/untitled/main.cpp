@@ -1,19 +1,3 @@
-/*  Copyright (C) 2011-2013  P.D. Buchan (pdbuchan@yahoo.com)
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 // Send an IPv4 ICMP packet via raw socket.
 // Stack fills out layer 2 (data link) information (MAC addresses) for us.
 // Values set for echo request packet, includes some ICMP data.
@@ -36,10 +20,14 @@
 
 #include <errno.h>            // errno, perror()
 
+#include <sys/time.h>
+#include <time.h>
+
 // Define some constants.
 const uint16_t IP4_HDRLEN = 20;         // IPv4 header length
 const uint16_t ICMP_HDRLEN = 8;         // ICMP header length for echo request, excludes data
 const uint16_t ICMP_BODY_LEN = 12;
+const uint16_t FULL_LEN = IP4_HDRLEN + ICMP_HDRLEN + ICMP_BODY_LEN;
 
 // Function prototypes
 uint16_t checksum (uint16_t *, int);
@@ -71,7 +59,6 @@ ifreq get_interface_info() {
     }
     close (sd);
     free(interface);
-    printf ("Index for interface %s is %i\n", interface, ifr.ifr_ifindex);
     return ifr;
 }
 
@@ -107,38 +94,26 @@ char* alloc_dst_binary(char const* dst_str) {
     return dst_ip;
 }
 
-ip create_ip_header(char* src_ip, char* dst_ip, int datalen) {
-    // IPv4 header
+ip create_ip_header(char* src_ip, char* dst_ip) {
     struct ip iphdr;
     // IPv4 header length (4 bits): Number of 32-bit words in header = 5
     iphdr.ip_hl = IP4_HDRLEN / sizeof (uint32_t);
-    // Internet Protocol version (4 bits): IPv4
     iphdr.ip_v = 4;
-    // Type of service (8 bits)
     iphdr.ip_tos = 0;
-    // Total length of datagram (16 bits): IP header + ICMP header + ICMP data
-    iphdr.ip_len = htons (IP4_HDRLEN + ICMP_HDRLEN + datalen);
-    // ID sequence number (16 bits): unused, since single datagram
+    iphdr.ip_len = htons (IP4_HDRLEN + ICMP_HDRLEN + ICMP_BODY_LEN);
     iphdr.ip_id = htons (0);
 
     // Flags, and Fragmentation offset (3, 13 bits): 0 since single datagram
     int* ip_flags = allocate_intmem (4);
-    // Zero (1 bit)
-    ip_flags[0] = 0;
-    // Do not fragment flag (1 bit)
-    ip_flags[1] = 0;
-    // More fragments following flag (1 bit)
-    ip_flags[2] = 0;
-    // Fragmentation offset (13 bits)
-    ip_flags[3] = 0;
+    ip_flags[0] = 0; // reserved
+    ip_flags[1] = 0; // Do not fragment flag (1 bit)
+    ip_flags[2] = 0; // More fragments following flag (1 bit)
+    ip_flags[3] = 0; // Fragmentation offset (13 bits)
     iphdr.ip_off = htons ((ip_flags[0] << 15)
             + (ip_flags[1] << 14)
             + (ip_flags[2] << 13)
             +  ip_flags[3]);
-
-    // Time-to-Live (8 bits): default to maximum value
     iphdr.ip_ttl = 255;
-    // Transport layer protocol (8 bits): 1 for ICMP
     iphdr.ip_p = IPPROTO_ICMP;
 
     // Source IPv4 address (32 bits)
@@ -154,43 +129,34 @@ ip create_ip_header(char* src_ip, char* dst_ip, int datalen) {
     }
 
     // IPv4 header checksum (16 bits): set to 0 when calculating checksum
-    iphdr.ip_sum = 0;
     iphdr.ip_sum = checksum ((uint16_t *) &iphdr, IP4_HDRLEN);
 
-    free (ip_flags);
+    free(ip_flags);
     return iphdr;
 }
 
 icmp create_icmp_header() {
-    // ICMP header
     struct icmp icmphdr;
-    // Message Type (8 bits)
-    icmphdr.icmp_type = ICMP_ECHO;
-    // Message Code (8 bits)
+    icmphdr.icmp_type = ICMP_TIMESTAMP;
     icmphdr.icmp_code = 0;
-    // Identifier (16 bits): usually pid of sending process - pick a number
-    icmphdr.icmp_id = htons (1000);
-    // Sequence Number (16 bits): starts at 0
+    icmphdr.icmp_id = htons (1000); // randomly selected
     icmphdr.icmp_seq = htons (0);
-    // ICMP header checksum (16 bits): set to 0 when calculating checksum
-    icmphdr.icmp_cksum = 0;
+    icmphdr.icmp_cksum = 0; // will be set further
     return icmphdr;
 }
 
-int create_socket(ifreq& ifr) {
+int create_send_socket(ifreq& ifr) {
     int sd;
     if ((sd = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0) {
         perror ("socket() failed ");
         exit (EXIT_FAILURE);
     }
-
     const int on = 1;
     // Set flag so socket expects us to provide IPv4 header.
     if (setsockopt (sd, IPPROTO_IP, IP_HDRINCL, &on, sizeof (on)) < 0) {
         perror ("setsockopt() failed to set IP_HDRINCL ");
         exit (EXIT_FAILURE);
     }
-
     // Bind socket to interface index.
     if (setsockopt (sd, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof (ifr)) < 0) {
         perror ("setsockopt() failed to bind to interface ");
@@ -199,19 +165,56 @@ int create_socket(ifreq& ifr) {
     return sd;
 }
 
+uint32_t bytes_to_millisec(uint8_t* bytes, uint16_t start_from) {
+    uint32_t time_in_ms = 0;
+    char* time_as_bytes = (char *) &time_in_ms;
+    for(uint16_t i = start_from; i != start_from + 4; ++i) {
+        time_as_bytes[i - start_from] = bytes[i];
+    }
+    return time_in_ms;
+}
+
+uint32_t current_time() {
+    timeval tv;
+    if(gettimeofday(&tv, NULL) != 0) {
+        perror("gettimeofday() failed");
+        exit(EXIT_FAILURE);
+    }
+    return ((tv.tv_sec % 86400) * 1000 + tv.tv_usec / 1000);
+}
+
+void print_ms_time(uint32_t time_ms) {
+    uint32_t ms = (uint32_t) time_ms % 1000;
+    uint32_t sec = (uint32_t) (time_ms / 1000) % 60 ;
+    uint32_t min = (uint32_t) ((time_ms / (1000*60)) % 60);
+    uint32_t hr   = (uint32_t) ((time_ms / (1000*60*60)) % 24);
+    printf("%d hr %d min %d sec %d ms", hr, min, sec, ms);
+}
+
+void sync_time(uint8_t* data) {
+    uint32_t send_time = ntohl(bytes_to_millisec(data, 0));
+    uint32_t remote_receive_time = ntohl(bytes_to_millisec(data, 4));
+    uint32_t remote_send_time = ntohl(bytes_to_millisec(data, 8));
+    uint32_t cur_remote_time = remote_send_time + (remote_receive_time - send_time);
+    printf("Remote time is ");
+    print_ms_time(cur_remote_time);
+    printf("\nLocal  time is ");
+    print_ms_time(current_time());
+    printf("\n");
+}
+
 int main () {
     struct ifreq ifr = get_interface_info();
 
-    // Source IPv4 address: you need to fill this out
+    // Source IPv4 address
     char* src_ip = allocate_strmem (INET_ADDRSTRLEN);
-    strcpy (src_ip, "192.168.1.132");
+    strcpy (src_ip, "192.168.1.44");
 
-    // Destination URL or IPv4 address: you need to fill this out
+    // Destination URL or IPv4 address
     char* dst_ip = alloc_dst_binary("github.com");
 
     // IPv4 header
-    int datalen = 4;
-    struct ip iphdr = create_ip_header(src_ip, dst_ip, datalen);
+    struct ip iphdr = create_ip_header(src_ip, dst_ip);
     free(src_ip);
     free(dst_ip);
 
@@ -220,21 +223,15 @@ int main () {
 
     // ICMP data
     uint8_t *data = allocate_ustrmem (IP_MAXPACKET);
-    data[0] = 'T';
-    data[1] = 'e';
-    data[2] = 's';
-    data[3] = 't';
+    uint32_t cur_time_ms = htonl(current_time());
+    memcpy(data, (char *) &cur_time_ms, 4);
 
     // Prepare packet.
     uint8_t *packet = allocate_ustrmem (IP_MAXPACKET);
-    // First part is an IPv4 header.
     memcpy (packet, &iphdr, IP4_HDRLEN);
-    // Next part of packet is upper layer protocol header.
-    memcpy ((packet + IP4_HDRLEN), &icmphdr, ICMP_HDRLEN);
-    // Finally, add the ICMP data.
-    memcpy (packet + IP4_HDRLEN + ICMP_HDRLEN, data, datalen);
-    // Calculate ICMP header checksum
-    icmphdr.icmp_cksum = checksum ((uint16_t *) (packet + IP4_HDRLEN), ICMP_HDRLEN + datalen);
+    memcpy (packet + IP4_HDRLEN, &icmphdr, ICMP_HDRLEN);
+    memcpy (packet + IP4_HDRLEN + ICMP_HDRLEN, data, ICMP_BODY_LEN);
+    icmphdr.icmp_cksum = checksum((uint16_t *) (packet + IP4_HDRLEN), ICMP_HDRLEN + ICMP_BODY_LEN);
     memcpy ((packet + IP4_HDRLEN), &icmphdr, ICMP_HDRLEN);
 
     // The kernel is going to prepare layer 2 information (ethernet frame header) for us.
@@ -246,21 +243,27 @@ int main () {
     sin.sin_family = AF_INET;
     sin.sin_addr.s_addr = iphdr.ip_dst.s_addr;
 
-    // Submit request for a raw socket descriptor.
-    int sd = create_socket(ifr);
+    int send_sd = create_send_socket(ifr);
 
-    // Send packet.
-    for(size_t i = 0; i != 100; ++i) {
-        if (sendto (sd, packet, IP4_HDRLEN + ICMP_HDRLEN + datalen, 0,
-                    (struct sockaddr *) &sin, sizeof (struct sockaddr)) < 0)  {
-            perror ("sendto() failed ");
-            exit (EXIT_FAILURE);
-        }
+    // Create receive socket
+    int recv_sd;
+    if ((recv_sd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0) {
+        printf("Could not process socket() [recv].\n");
+        return EXIT_FAILURE;
     }
+    if(sendto(send_sd, packet, FULL_LEN, 0, (sockaddr *) &sin, sizeof (sockaddr)) < 0) {
+        perror ("sendto() failed");
+        exit (EXIT_FAILURE);
+    }
+    int status;
+    if((status = recvfrom(recv_sd, data, IP_MAXPACKET, 0, 0, 0)) == -1) {
+        perror("receive failed");
+        exit(EXIT_FAILURE);
+    }
+    sync_time(data + IP4_HDRLEN + ICMP_HDRLEN);
 
-    // Close socket descriptor.
-    close (sd);
-    // Free allocated memory.
+    close(send_sd);
+    close(recv_sd);
     free (data);
     free (packet);
 
