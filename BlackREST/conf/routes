@@ -9,9 +9,11 @@ GET            /                                        controllers.Application.
 GET            /assets/*file                            controllers.Assets.at(path="/public", file)
 
 # RESTful
-GET            /json/$taskId<[0-9]+>                    controllers.Application.handleGetJson(taskId: Int)
-GET            /xml/$taskId<[0-9]+>                     controllers.Application.handleGetXml(taskId: Int)
-GET            /html/$taskId<[0-9]+>                    controllers.Application.handleGetHtml(taskId: Int)
+#GET            /json/$taskId<[0-9]+>                    controllers.Application.handleGetJson(taskId: Int)
+#GET            /xml/$taskId<[0-9]+>                     controllers.Application.handleGetXml(taskId: Int)
+#GET            /html/$taskId<[0-9]+>                    controllers.Application.handleGetHtml(taskId: Int)
+
+GET            /$taskId<[0-9]+>                    controllers.Application.get(taskId: Int)
 
 PUT            /$any<(json|xml|html)(\/[0-9]*)?>        controllers.Application.make405(any)
 POST           /$any<(json|xml|html)(\/[0-9]*)?>        controllers.Application.make405(any)

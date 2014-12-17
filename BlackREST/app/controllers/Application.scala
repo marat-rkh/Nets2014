@@ -18,6 +18,20 @@ object Application extends Controller {
     Ok(views.html.main("RESTful")(Html("<h1>Welcome to RESTful service about black metal bands!</h1>")))
   }
 
+  def get(taskId: Int) = Action { request =>
+    request.headers.get("Accept") match {
+      case Some(ct) => {
+        ct match {
+          case "text/html" => handleGetHtml(taskId)
+          case "application/xml" => handleGetXml(taskId)
+          case "application/json" => handleGetJson(taskId)
+          case _                  => BadRequest("wrong content type")
+        }
+      }
+      case _        => BadRequest("content type not specified")
+    }
+  }
+
   def handleGetJson(taskId: Int) =
     handleGet(
       taskId,
@@ -126,7 +140,7 @@ object Application extends Controller {
   private def handleGet(taskId: TaskId,
                          okRes: (BandName, List[AlbumEntry]) => Result,
                          bandNotFoundRes: Result,
-                         taskNotFoundRes: Result) = Action {
+                         taskNotFoundRes: Result) = {
     bandsDbManager get taskId match {
       case Some(mbRes) => mbRes match {
         case Some((bandName, albums)) => okRes(bandName, albums)
@@ -149,5 +163,8 @@ object Application extends Controller {
 
   private def badRequestJson(err: JsError) =
     Json.obj("status" -> "error", "details" -> JsError.toFlatJson(err))
+
+  private def badRequestJson(err: String) =
+    Json.obj("status" -> "error", "details" -> err)
 
 }
