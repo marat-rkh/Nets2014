@@ -23,27 +23,35 @@
 #include <sys/time.h>
 #include <time.h>
 
-// Define some constants.
 const uint16_t IP4_HDRLEN = 20;         // IPv4 header length
-const uint16_t ICMP_HDRLEN = 8;         // ICMP header length for echo request, excludes data
+const uint16_t ICMP_HDRLEN = 8;         // ICMP header length
 const uint16_t ICMP_BODY_LEN = 12;
 const uint16_t FULL_LEN = IP4_HDRLEN + ICMP_HDRLEN + ICMP_BODY_LEN;
 
-// Function prototypes
-uint16_t checksum (uint16_t *, int);
-char *allocate_strmem (int);
-uint8_t *allocate_ustrmem (int);
-int *allocate_intmem (int);
+void* alloc_mem(int len, size_t block_size) {
+    if (len <= 0) {
+        fprintf (stderr, "ERROR: Cannot allocate memory because len = %i\n", len);
+        exit (EXIT_FAILURE);
+    }
+    void* buf = malloc (len * block_size);
+    if (buf == 0) {
+        fprintf (stderr, "ERROR: Cannot allocate memory for array allocate_strmem().\n");
+        exit (EXIT_FAILURE);
+    }
+    memset (buf, 0, len * block_size);
+    return buf;
+}
 
 ifreq get_interface_info() {
     // Interface to send packet through.
-    char* interface = allocate_strmem (40);
+    char* interface = (char *) alloc_mem(40, sizeof(char));
     strcpy (interface, "wlan0");
 
     // Submit request for a socket descriptor to look up interface.
     int sd;
     if ((sd = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0) {
         perror ("socket() failed to get socket descriptor for using ioctl() ");
+        free(interface);
         exit (EXIT_FAILURE);
     }
 
@@ -55,16 +63,18 @@ ifreq get_interface_info() {
     snprintf (ifr.ifr_name, sizeof (ifr.ifr_name), "%s", interface);
     if (ioctl (sd, SIOCGIFINDEX, &ifr) < 0) {
         perror ("ioctl() failed to find interface ");
+        free(interface);
+        close (sd);
         exit (EXIT_FAILURE);
     }
-    close (sd);
     free(interface);
+    close (sd);
     return ifr;
 }
 
 char* alloc_dst_binary(char const* dst_str) {
-    // Destination URL or IPv4 address: you need to fill this out
-    char* target = allocate_strmem (40);
+    // Destination URL or IPv4 address
+    char* target = (char *) alloc_mem(40, sizeof(char));
     strcpy (target, dst_str);
 
     // Fill out hints for getaddrinfo().
@@ -83,7 +93,7 @@ char* alloc_dst_binary(char const* dst_str) {
     }
     struct sockaddr_in *ipv4 = (struct sockaddr_in *) res->ai_addr;
     void* tmp = &(ipv4->sin_addr);
-    char* dst_ip = allocate_strmem (INET_ADDRSTRLEN);
+    char* dst_ip = (char *) alloc_mem(INET_ADDRSTRLEN, sizeof(char));
     if (inet_ntop (AF_INET, tmp, dst_ip, INET_ADDRSTRLEN) == NULL) {
         status = errno;
         fprintf (stderr, "inet_ntop() failed.\nError message: %s", strerror (status));
@@ -92,6 +102,28 @@ char* alloc_dst_binary(char const* dst_str) {
     freeaddrinfo (res);
     free (target);
     return dst_ip;
+}
+
+uint16_t checksum (uint16_t *addr, int len) {
+    int nleft = len;
+    int sum = 0;
+    uint16_t *w = addr;
+    uint16_t answer = 0;
+
+    while (nleft > 1) {
+        sum += *w++;
+        nleft -= sizeof (uint16_t);
+    }
+
+    if (nleft == 1) {
+        *(uint8_t *) (&answer) = *(uint8_t *) w;
+        sum += answer;
+    }
+
+    sum = (sum >> 16) + (sum & 0xFFFF);
+    sum += (sum >> 16);
+    answer = ~sum;
+    return (answer);
 }
 
 ip create_ip_header(char* src_ip, char* dst_ip) {
@@ -104,7 +136,7 @@ ip create_ip_header(char* src_ip, char* dst_ip) {
     iphdr.ip_id = htons (0);
 
     // Flags, and Fragmentation offset (3, 13 bits): 0 since single datagram
-    int* ip_flags = allocate_intmem (4);
+    int* ip_flags = (int *) alloc_mem(4, sizeof(int));
     ip_flags[0] = 0; // reserved
     ip_flags[1] = 0; // Do not fragment flag (1 bit)
     ip_flags[2] = 0; // More fragments following flag (1 bit)
@@ -116,19 +148,15 @@ ip create_ip_header(char* src_ip, char* dst_ip) {
     iphdr.ip_ttl = 255;
     iphdr.ip_p = IPPROTO_ICMP;
 
-    // Source IPv4 address (32 bits)
+    // Source and dest IPv4 address (32 bits)
     int status;
-    if ((status = inet_pton (AF_INET, src_ip, &(iphdr.ip_src))) != 1) {
-        fprintf (stderr, "inet_pton() failed.\nError message: %s", strerror (status));
+    if ((status = inet_pton (AF_INET, src_ip, &(iphdr.ip_src))) != 1 ||
+        (status = inet_pton (AF_INET, dst_ip, &(iphdr.ip_dst))) != 1)
+    {
+        printf("inet_pton() failed.\nError message: %s", strerror (status));
+        free(ip_flags);
         exit (EXIT_FAILURE);
     }
-    // Destination IPv4 address (32 bits)
-    if ((status = inet_pton (AF_INET, dst_ip, &(iphdr.ip_dst))) != 1) {
-        fprintf (stderr, "inet_pton() failed.\nError message: %s", strerror (status));
-        exit (EXIT_FAILURE);
-    }
-
-    // IPv4 header checksum (16 bits): set to 0 when calculating checksum
     iphdr.ip_sum = checksum ((uint16_t *) &iphdr, IP4_HDRLEN);
 
     free(ip_flags);
@@ -147,19 +175,14 @@ icmp create_icmp_header() {
 
 int create_send_socket(ifreq& ifr) {
     int sd;
-    if ((sd = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0) {
-        perror ("socket() failed ");
-        exit (EXIT_FAILURE);
-    }
     const int on = 1;
-    // Set flag so socket expects us to provide IPv4 header.
-    if (setsockopt (sd, IPPROTO_IP, IP_HDRINCL, &on, sizeof (on)) < 0) {
-        perror ("setsockopt() failed to set IP_HDRINCL ");
-        exit (EXIT_FAILURE);
-    }
-    // Bind socket to interface index.
-    if (setsockopt (sd, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof (ifr)) < 0) {
-        perror ("setsockopt() failed to bind to interface ");
+    // create socket and set flags: IP_HDRINCL - beacuse we provide
+    // ip header ourselves, SO_BINDTODEVICE - to bind socket to interface
+    if ((sd = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0 ||
+        setsockopt (sd, IPPROTO_IP, IP_HDRINCL, &on, sizeof (on)) < 0 ||
+        setsockopt (sd, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof (ifr)) < 0)
+    {
+        perror ("send socket creation error");
         exit (EXIT_FAILURE);
     }
     return sd;
@@ -207,7 +230,7 @@ int main () {
     struct ifreq ifr = get_interface_info();
 
     // Source IPv4 address
-    char* src_ip = allocate_strmem (INET_ADDRSTRLEN);
+    char* src_ip = (char *) alloc_mem(INET_ADDRSTRLEN, sizeof(char));
     strcpy (src_ip, "192.168.1.44");
 
     // Destination URL or IPv4 address
@@ -222,12 +245,12 @@ int main () {
     struct icmp icmphdr = create_icmp_header();
 
     // ICMP data
-    uint8_t *data = allocate_ustrmem (IP_MAXPACKET);
+    uint8_t *data = (uint8_t *) alloc_mem(IP_MAXPACKET, sizeof(uint8_t));
     uint32_t cur_time_ms = htonl(current_time());
     memcpy(data, (char *) &cur_time_ms, 4);
 
     // Prepare packet.
-    uint8_t *packet = allocate_ustrmem (IP_MAXPACKET);
+    uint8_t *packet = (uint8_t *) alloc_mem(IP_MAXPACKET, sizeof(uint8_t));
     memcpy (packet, &iphdr, IP4_HDRLEN);
     memcpy (packet + IP4_HDRLEN, &icmphdr, ICMP_HDRLEN);
     memcpy (packet + IP4_HDRLEN + ICMP_HDRLEN, data, ICMP_BODY_LEN);
@@ -268,85 +291,4 @@ int main () {
     free (packet);
 
     return (EXIT_SUCCESS);
-}
-
-// Checksum function
-uint16_t checksum (uint16_t *addr, int len) {
-    int nleft = len;
-    int sum = 0;
-    uint16_t *w = addr;
-    uint16_t answer = 0;
-
-    while (nleft > 1) {
-        sum += *w++;
-        nleft -= sizeof (uint16_t);
-    }
-
-    if (nleft == 1) {
-        *(uint8_t *) (&answer) = *(uint8_t *) w;
-        sum += answer;
-    }
-
-    sum = (sum >> 16) + (sum & 0xFFFF);
-    sum += (sum >> 16);
-    answer = ~sum;
-    return (answer);
-}
-
-// Allocate memory for an array of chars.
-char* allocate_strmem (int len)
-{
-    char *tmp;
-
-    if (len <= 0) {
-        fprintf (stderr, "ERROR: Cannot allocate memory because len = %i in allocate_strmem().\n", len);
-        exit (EXIT_FAILURE);
-    }
-
-    tmp = (char *) malloc (len * sizeof (char));
-    if (tmp != NULL) {
-        memset (tmp, 0, len * sizeof (char));
-        return (tmp);
-    } else {
-        fprintf (stderr, "ERROR: Cannot allocate memory for array allocate_strmem().\n");
-        exit (EXIT_FAILURE);
-    }
-}
-
-// Allocate memory for an array of unsigned chars.
-uint8_t * allocate_ustrmem (int len) {
-    u_int8_t *tmp;
-
-    if (len <= 0) {
-        fprintf (stderr, "ERROR: Cannot allocate memory because len = %i in allocate_ustrmem().\n", len);
-        exit (EXIT_FAILURE);
-    }
-
-    tmp = (uint8_t *) malloc (len * sizeof (uint8_t));
-    if (tmp != NULL) {
-        memset (tmp, 0, len * sizeof (uint8_t));
-        return (tmp);
-    } else {
-        fprintf (stderr, "ERROR: Cannot allocate memory for array allocate_ustrmem().\n");
-        exit (EXIT_FAILURE);
-    }
-}
-
-// Allocate memory for an array of ints.
-int* allocate_intmem (int len) {
-    int *tmp;
-
-    if (len <= 0) {
-        fprintf (stderr, "ERROR: Cannot allocate memory because len = %i in allocate_intmem().\n", len);
-        exit (EXIT_FAILURE);
-    }
-
-    tmp = (int *) malloc (len * sizeof (int));
-    if (tmp != NULL) {
-        memset (tmp, 0, len * sizeof (int));
-        return (tmp);
-    } else {
-        fprintf (stderr, "ERROR: Cannot allocate memory for array allocate_intmem().\n");
-        exit (EXIT_FAILURE);
-    }
 }
