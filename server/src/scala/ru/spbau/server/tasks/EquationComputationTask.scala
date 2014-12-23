@@ -3,7 +3,7 @@ package ru.spbau.server.tasks
 import java.util.UUID
 
 import ru.spbau.server.holder.EquationDataHolder
-import ru.spbau.server.run.ServerApplication
+import ru.spbau.server.run.AbstractApplication
 
 /**
  * User: nikita_kartashov
@@ -11,13 +11,14 @@ import ru.spbau.server.run.ServerApplication
  * Time: 19:33
  */
 case class EquationComputationTask(equationDataHolder: EquationDataHolder,
-                                   app: ServerApplication) extends Runnable {
+                                   app: AbstractApplication) extends Runnable {
   val uuid = UUID.randomUUID()
+  val taskCreated = System.currentTimeMillis
 
   override def run(): Unit = {
-    println(s"Started evaluating task $uuid")
-    val resultArray = new Array[Int](EquationDataHolder.equationNumber)
-    (0 until EquationDataHolder.equationNumber).foreach{
+    app.d(s"Started evaluating task $uuid")
+    val resultArray = new Array[Int](EquationDataHolder.EquationNumber)
+    (0 until EquationDataHolder.EquationNumber).foreach {
       i =>
         val eq = equationDataHolder(i)
         val d = eq.b * eq.b - 4 * eq.a * eq.c
@@ -32,7 +33,8 @@ case class EquationComputationTask(equationDataHolder: EquationDataHolder,
         }
     }
     val newTask = ResponseSendingTask(uuid, resultArray, app)
-    println(s"Finished evaluating task $uuid")
+    app.d(s"Finished evaluating task $uuid")
+    println(System.currentTimeMillis() - taskCreated)
     app.getExecutor.execute(newTask)
   }
 }

@@ -16,15 +16,21 @@ import scala.math._
  * Date: 21.12.2014
  * Time: 22:25
  */
-final class ServerApplication extends AbstractApplication{
+final class ServerApplication extends AbstractApplication {
   def port = 45213
+
   def localhost = "localhost"
+
   def maxTreadNumber = 4
+
+  def debug = false
+
   private val executor = Executors.newFixedThreadPool(maxTreadNumber)
   @volatile private var taskToKeyMapping = Map[UUID, SelectionKey]()
   @volatile private var dataReceiver = Map[SelectionKey, AbstractDataHolder]()
 
   override def getExecutor = executor
+
   override def getMapping = taskToKeyMapping.apply
 
   def run() = {
@@ -59,7 +65,7 @@ final class ServerApplication extends AbstractApplication{
               val clientSocketChannel = Option(serverSocketChannel.accept())
               clientSocketChannel match {
                 case Some(channel) =>
-                  println("New client")
+                  d("New client")
                   channel.configureBlocking(false)
                   val clientKey = channel.register(
                     selector, SelectionKey.OP_READ,
@@ -68,20 +74,20 @@ final class ServerApplication extends AbstractApplication{
                 case _ =>
               }
             case ClientFlag =>
-              println("New data")
-              val bufferSize = EquationDataHolder.bufferSizeInBytes
+              d("New data")
+              val bufferSize = EquationDataHolder.BufferSizeInBytes
               val buffer = ByteBuffer.allocate(bufferSize)
               val clientChannel = key.channel().asInstanceOf[SocketChannel]
               if (key.isReadable) {
                 val readBytes = clientChannel.read(buffer)
-                println(s"Read $readBytes bytes")
+                d(s"Read $readBytes bytes")
                 if (readBytes > 0) {
                   if (!dataReceiver.contains(key)) {
                     dataReceiver += (key -> new EquationDataHolder())
                   }
                   val holder = dataReceiver(key)
                   holder.write(buffer, min(readBytes, holder.bytesTillFinished))
-                  println(s"Left ${holder.bytesTillFinished} bytes")
+                  d(s"Left ${holder.bytesTillFinished} bytes")
                   if (holder.isFinished) {
                     // Remove holder, add task
                     val optionHolder = getAndRemoveDataHolder(key)
@@ -91,20 +97,26 @@ final class ServerApplication extends AbstractApplication{
                           holder.asInstanceOf[EquationDataHolder],
                           this)
                         taskToKeyMapping += (newTask.uuid -> key)
-                        println("Filled data holder")
+                        d("Filled data holder")
                         executor.execute(newTask)
                       case _ =>
                     }
                   }
                 }
                 if (readBytes < 0) {
-                  println("Client connection closed")
+                  d("Client connection closed")
                   getAndRemoveDataHolder(key)
                 }
               }
           }
         }
       }
+    }
+  }
+
+  override def d(message: String): Unit = {
+    if (debug) {
+      println(message)
     }
   }
 }

@@ -23,17 +23,17 @@ class EquationDataHolder extends AbstractDataHolder {
     def solve = 0
   }
 
-  def apply(i: Int) = Equation(bytes, EquationDataHolder.integersInEquation * i)
+  def apply(i: Int) = Equation(bytes, EquationDataHolder.IntegersInEquation * i)
 
-  private val bytes = ByteBuffer.allocate(EquationDataHolder.bufferSizeInBytes)
+  private val bytes = ByteBuffer.allocate(EquationDataHolder.BufferSizeInBytes)
   private var currentIndex: Int = 0
 
   override def bytesTillFinished: Int = bytes.capacity - currentIndex
 }
 
 object EquationDataHolder {
-  val integerSizeInBytes = 4
-  val integersInEquation = 3
-  val equationNumber = 10
-  val bufferSizeInBytes = integerSizeInBytes * integersInEquation * equationNumber
+  val IntegerSizeInBytes = 4
+  val IntegersInEquation = 3
+  val EquationNumber = 10
+  val BufferSizeInBytes = IntegerSizeInBytes * IntegersInEquation * EquationNumber
 }

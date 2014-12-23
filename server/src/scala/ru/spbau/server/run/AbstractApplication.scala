@@ -11,6 +11,9 @@ import java.util.concurrent.ExecutorService
  */
 trait AbstractApplication {
   def getExecutor: ExecutorService
-  def getMapping : UUID => SelectionKey
+
+  def getMapping: UUID => SelectionKey
+
+  // Means debug print
   def d(message: String): Unit
 }
