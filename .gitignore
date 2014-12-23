@@ -21,3 +21,4 @@
 *.iml
 build-untitled-Desktop_Qt_5_2_1_GCC_64bit-Debug/
 server/out
+HighLoadServer/Client/out/
