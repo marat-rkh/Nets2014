@@ -10,6 +10,7 @@ class EquationSolverClient(ip: InetAddress, port: Int) extends AutoCloseable {
   val out = socket.getOutputStream
   val in = socket.getInputStream
   val coeffsGenerator = new Random()
+  val taskSize = 30
 
   def exchangeInfo(): Long = {
     val startTime = System.currentTimeMillis()
@@ -24,11 +25,8 @@ class EquationSolverClient(ip: InetAddress, port: Int) extends AutoCloseable {
   }
 
   private def sendRandomTask() = {
-    val a = coeffsGenerator.nextInt()
-    val b = coeffsGenerator.nextInt()
-    val c = coeffsGenerator.nextInt()
-    val coeffs = a :: b :: c :: Nil
-    val buffer = ByteBuffer.allocate(12)
+    val coeffs = List.tabulate(taskSize)(i => coeffsGenerator.nextInt())
+    val buffer = ByteBuffer.allocate(taskSize * 4)
     val bytes = coeffs.foldLeft(buffer)((buf, coeff) => buf.putInt(coeff)).array()
     out.write(bytes)
   }

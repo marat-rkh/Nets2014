@@ -24,6 +24,7 @@ object Main {
       val calls = List.fill(requestsNum)(callFun)
       val results = calls.foldRight(Nil: List[Long])((call, acc) => call() :: acc)
       // write to file for creating graph
+      println(results)
     }
   }
 
