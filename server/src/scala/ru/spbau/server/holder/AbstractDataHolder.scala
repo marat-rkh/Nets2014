@@ -1,4 +1,4 @@
-package holder
+package ru.spbau.server.holder
 
 import java.nio.ByteBuffer
 
@@ -10,4 +10,5 @@ import java.nio.ByteBuffer
 trait AbstractDataHolder {
   def isFinished: Boolean
   def write(newBytes: ByteBuffer, length: Int)
+  def bytesTillFinished: Int
 }

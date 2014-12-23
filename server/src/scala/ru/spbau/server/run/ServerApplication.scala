@@ -1,0 +1,110 @@
+package ru.spbau.server.run
+
+import java.net.InetSocketAddress
+import java.nio.ByteBuffer
+import java.nio.channels.{SelectionKey, Selector, ServerSocketChannel, SocketChannel}
+import java.util.UUID
+import java.util.concurrent.Executors
+
+import ru.spbau.server.holder.{AbstractDataHolder, EquationDataHolder}
+import ru.spbau.server.tasks.EquationComputationTask
+
+import scala.math._
+
+/**
+ * User: nikita_kartashov
+ * Date: 21.12.2014
+ * Time: 22:25
+ */
+final class ServerApplication extends AbstractApplication{
+  def port = 45213
+  def localhost = "localhost"
+  def maxTreadNumber = 4
+  private val executor = Executors.newFixedThreadPool(maxTreadNumber)
+  @volatile private var taskToKeyMapping = Map[UUID, SelectionKey]()
+  @volatile private var dataReceiver = Map[SelectionKey, AbstractDataHolder]()
+
+  override def getExecutor = executor
+  override def getMapping = taskToKeyMapping.apply
+
+  def run() = {
+    def getAndRemoveDataHolder(key: SelectionKey) = {
+      val result = Option(dataReceiver(key))
+      if (dataReceiver.contains(key)) {
+        dataReceiver -= key
+      }
+      result
+    }
+
+    val channel = ServerSocketChannel.open()
+    channel.bind(new InetSocketAddress(localhost, port))
+    // Set to non-blocking mode
+    channel.configureBlocking(false)
+    val selector = Selector.open()
+
+    val socketServerSelectionKey = channel.register(selector,
+      SelectionKey.OP_ACCEPT)
+    // Mark socket as server one, to distinguish new connections
+    // from old ones
+    socketServerSelectionKey.attach(ServerFlag)
+    while (true) {
+      if (selector.select() != 0) {
+        val iterator = selector.selectedKeys().iterator()
+        while (iterator.hasNext) {
+          val key = iterator.next()
+          iterator.remove()
+          key.attachment() match {
+            case ServerFlag =>
+              val serverSocketChannel = key.channel().asInstanceOf[ServerSocketChannel]
+              val clientSocketChannel = Option(serverSocketChannel.accept())
+              clientSocketChannel match {
+                case Some(channel) =>
+                  println("New client")
+                  channel.configureBlocking(false)
+                  val clientKey = channel.register(
+                    selector, SelectionKey.OP_READ,
+                    SelectionKey.OP_WRITE)
+                  clientKey.attach(ClientFlag)
+                case _ =>
+              }
+            case ClientFlag =>
+              println("New data")
+              val bufferSize = EquationDataHolder.bufferSizeInBytes
+              val buffer = ByteBuffer.allocate(bufferSize)
+              val clientChannel = key.channel().asInstanceOf[SocketChannel]
+              if (key.isReadable) {
+                val readBytes = clientChannel.read(buffer)
+                println(s"Read $readBytes bytes")
+                if (readBytes > 0) {
+                  if (!dataReceiver.contains(key)) {
+                    dataReceiver += (key -> new EquationDataHolder())
+                  }
+                  val holder = dataReceiver(key)
+                  holder.write(buffer, min(readBytes, holder.bytesTillFinished))
+                  println(s"Left ${holder.bytesTillFinished} bytes")
+                  if (holder.isFinished) {
+                    // Remove holder, add task
+                    val optionHolder = getAndRemoveDataHolder(key)
+                    optionHolder match {
+                      case Some(holder) =>
+                        val newTask = EquationComputationTask(
+                          holder.asInstanceOf[EquationDataHolder],
+                          this)
+                        taskToKeyMapping += (newTask.uuid -> key)
+                        println("Filled data holder")
+                        executor.execute(newTask)
+                      case _ =>
+                    }
+                  }
+                }
+                if (readBytes < 0) {
+                  println("Client connection closed")
+                  getAndRemoveDataHolder(key)
+                }
+              }
+          }
+        }
+      }
+    }
+  }
+}

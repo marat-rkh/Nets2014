@@ -1,10 +1,9 @@
-package tasks
+package ru.spbau.server.tasks
 
-import java.nio.channels.SelectionKey
 import java.util.UUID
-import java.util.concurrent.ExecutorService
 
-import holder.EquationDataHolder
+import ru.spbau.server.holder.EquationDataHolder
+import ru.spbau.server.run.ServerApplication
 
 /**
  * User: nikita_kartashov
@@ -12,11 +11,11 @@ import holder.EquationDataHolder
  * Time: 19:33
  */
 case class EquationComputationTask(equationDataHolder: EquationDataHolder,
-                                   executor: ExecutorService,
-                                   taskToKeyMapping: Map[UUID, SelectionKey]) extends Runnable {
+                                   app: ServerApplication) extends Runnable {
   val uuid = UUID.randomUUID()
 
   override def run(): Unit = {
+    println(s"Started evaluating task $uuid")
     val resultArray = new Array[Int](EquationDataHolder.equationNumber)
     (0 until EquationDataHolder.equationNumber).foreach{
       i =>
@@ -32,7 +31,8 @@ case class EquationComputationTask(equationDataHolder: EquationDataHolder,
           resultArray(i) = 0
         }
     }
-    val newTask = ResponseSendingTask(uuid, resultArray, taskToKeyMapping)
-    executor.submit(newTask)
+    val newTask = ResponseSendingTask(uuid, resultArray, app)
+    println(s"Finished evaluating task $uuid")
+    app.getExecutor.execute(newTask)
   }
 }

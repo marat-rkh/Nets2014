@@ -1,4 +1,4 @@
-package holder
+package ru.spbau.server.holder
 
 import java.nio.ByteBuffer
 
@@ -8,7 +8,7 @@ import java.nio.ByteBuffer
  * Time: 17:51
  */
 class EquationDataHolder extends AbstractDataHolder {
-  override def isFinished: Boolean = currentIndex == EquationDataHolder.bufferSizeInBytes
+  override def isFinished: Boolean = bytesTillFinished == 0
 
   override def write(newBytes: ByteBuffer, length: Int): Unit = {
     (0 until length).foreach(i => bytes.put(i, newBytes.get(i)))
@@ -27,6 +27,8 @@ class EquationDataHolder extends AbstractDataHolder {
 
   private val bytes = ByteBuffer.allocate(EquationDataHolder.bufferSizeInBytes)
   private var currentIndex: Int = 0
+
+  override def bytesTillFinished: Int = bytes.capacity - currentIndex
 }
 
 object EquationDataHolder {
