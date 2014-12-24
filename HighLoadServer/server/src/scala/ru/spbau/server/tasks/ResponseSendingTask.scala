@@ -1,6 +1,6 @@
 package ru.spbau.server.tasks
 
-import java.nio.IntBuffer
+import java.nio.{ByteBuffer, IntBuffer}
 import java.nio.channels.SocketChannel
 import java.util.UUID
 
@@ -16,19 +16,15 @@ case class ResponseSendingTask(uuid: UUID, result: Array[Int], app: AbstractAppl
   override def run(): Unit = {
     app.d(s"Started sending task $uuid")
     val clientKey = app.getMapping(uuid)
-    val writeBuffer = IntBuffer.wrap(result)
+    val writeBuffer:ByteBuffer = IntBuffer.wrap(result)
     Option(clientKey.channel()) match {
       case Some(channel) =>
         val socketChannel = channel.asInstanceOf[SocketChannel]
-        // I have commented 'while' out because after 'write' method invocation buffer's
-        // position in not advanced (and we get inf loop). I assume for now that all data
-        // will be sent in one call
-//        while (writeBuffer.hasRemaining) {
+        while (writeBuffer.hasRemaining) {
+          val written = socketChannel.write(writeBuffer)
+          app.d(s"Written: $written")
           app.d(s"Position: ${writeBuffer.position}")
-          socketChannel.write(writeBuffer)
-//        }
-        clientKey.cancel()
-        channel.close()
+        }
       case None =>
     }
     app.d(s"Sent task $uuid")
