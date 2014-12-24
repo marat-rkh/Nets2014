@@ -19,9 +19,10 @@ case class ResponseSendingTask(uuid: UUID, result: Array[Int], app: AbstractAppl
     val writeBuffer = IntBuffer.wrap(result)
     Option(clientKey.channel()) match {
       case Some(channel) =>
+        val socketChannel = channel.asInstanceOf[SocketChannel]
         while (writeBuffer.hasRemaining) {
           app.d(s"Position: ${writeBuffer.position}")
-          channel.asInstanceOf[SocketChannel].write(writeBuffer)
+          socketChannel.write(writeBuffer)
         }
         clientKey.cancel()
         channel.close()
