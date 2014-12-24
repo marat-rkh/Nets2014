@@ -37,7 +37,7 @@ class EquationSolverClient(ip: InetAddress, port: Int) extends AutoCloseable {
   private def readResponse() = {
     Utils.debug("Start reading response")
     val buffer = new Array[Byte](EQUATIONS_NUMBER * Integer.SIZE)
-    while(in.read(buffer) > 0) {
+    while(in.read(buffer) != -1) {
       Utils.debug("read")
     }
     Utils.debug("Response has been received")
