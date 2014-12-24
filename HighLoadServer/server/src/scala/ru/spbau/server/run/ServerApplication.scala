@@ -35,7 +35,7 @@ final class ServerApplication extends AbstractApplication {
 
   def run() = {
     def getAndRemoveDataHolder(key: SelectionKey) = {
-      val result = Option(dataReceiver(key))
+      val result = dataReceiver.get(key)
       if (dataReceiver.contains(key)) {
         dataReceiver -= key
       }
