@@ -37,8 +37,26 @@ class EquationSolverClient(ip: InetAddress, port: Int) extends AutoCloseable {
     val buffer = new Array[Byte](EQUATIONS_NUMBER * Integer.SIZE)
 //    val result = ByteBuffer.allocate(EQUATIONS_NUMBER * Integer.SIZE)
 //    val buffer = new Array[Byte](1024)
-    while(in.read(buffer) != -1) {
+//    val needToRead = EQUATIONS_NUMBER * Integer.SIZE
+//    var readBytes = 0
+//    var reading = true
+//    while (reading) {
+//      val read = in.read(buffer)
+//      if (read == -1) {
+//        reading = false
+//      } else {
+//        readBytes += read
+//        if (readBytes >= needToRead) {
+//          reading = false
+//        }
+//      }
+
 //      result.put(buffer)
+    var flag = true
+    while (flag) {
+      val read = in.read(buffer)
+      println(read)
+      flag = ! (read == EQUATIONS_NUMBER * INTEGER_BYTES)
     }
 //    result.clear()
 //    println("result: " + result.getInt)
