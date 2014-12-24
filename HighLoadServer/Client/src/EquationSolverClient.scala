@@ -30,5 +30,8 @@ class EquationSolverClient(ip: InetAddress, port: Int) extends AutoCloseable {
     val bytes = coeffs.foldLeft(buffer)((buf, coeff) => buf.putInt(coeff)).array()
     out.write(bytes)
   }
-  private def readResponse() = in.read()
+  private def readResponse() = {
+    var buffer = new Array[Byte](1024)
+    while(in.read(buffer) != -1) {}
+  }
 }
