@@ -9,12 +9,12 @@ object Main {
       case false =>
         println("usage: <exec_name> <server_ip> <server_port> <requests_num>")
       case true =>
-        try {
+//        try {
           runClient(args(0), Integer.parseInt(args(1)), Integer.parseInt(args(2)))
-        } catch {
-          case e : Exception =>
-            println("error: " + e.getMessage)
-        }
+//        } catch {
+//          case e : Exception =>
+//            println("error: " + e.getMessage)
+//        }
     }
   }
 

@@ -20,10 +20,13 @@ case class ResponseSendingTask(uuid: UUID, result: Array[Int], app: AbstractAppl
     Option(clientKey.channel()) match {
       case Some(channel) =>
         val socketChannel = channel.asInstanceOf[SocketChannel]
-        while (writeBuffer.hasRemaining) {
+        // I have commented 'while' out because after 'write' method invocation buffer's
+        // position in not advanced (and we get inf loop). I assume for now that all data
+        // will be sent in one call
+//        while (writeBuffer.hasRemaining) {
           app.d(s"Position: ${writeBuffer.position}")
           socketChannel.write(writeBuffer)
-        }
+//        }
         clientKey.cancel()
         channel.close()
       case None =>

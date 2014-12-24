@@ -10,13 +10,16 @@ class EquationSolverClient(ip: InetAddress, port: Int) extends AutoCloseable {
   val out = socket.getOutputStream
   val in = socket.getInputStream
   val coeffsGenerator = new Random()
-  val taskSize = 30
+
+  val EQUATIONS_NUMBER = 10
+  val COEFFICIENTS_NUMBER = 3
+  val INTEGER_BYTES = Integer.SIZE / 8
 
   def exchangeInfo(): Long = {
     val startTime = System.currentTimeMillis()
     sendRandomTask()
     readResponse()
-    startTime - System.currentTimeMillis()
+    System.currentTimeMillis() - startTime
   }
 
   def close(): Unit = {
@@ -25,13 +28,19 @@ class EquationSolverClient(ip: InetAddress, port: Int) extends AutoCloseable {
   }
 
   private def sendRandomTask() = {
-    val coeffs = List.tabulate(taskSize)(i => coeffsGenerator.nextInt())
-    val buffer = ByteBuffer.allocate(taskSize * 4)
+    val coeffs = List.tabulate(EQUATIONS_NUMBER * COEFFICIENTS_NUMBER)(i => coeffsGenerator.nextInt())
+    val buffer = ByteBuffer.allocate(EQUATIONS_NUMBER * COEFFICIENTS_NUMBER * INTEGER_BYTES)
     val bytes = coeffs.foldLeft(buffer)((buf, coeff) => buf.putInt(coeff)).array()
     out.write(bytes)
   }
   private def readResponse() = {
-    var buffer = new Array[Byte](1024)
-    while(in.read(buffer) != -1) {}
+    val buffer = new Array[Byte](EQUATIONS_NUMBER * Integer.SIZE)
+//    val result = ByteBuffer.allocate(EQUATIONS_NUMBER * Integer.SIZE)
+//    val buffer = new Array[Byte](1024)
+    while(in.read(buffer) != -1) {
+//      result.put(buffer)
+    }
+//    result.clear()
+//    println("result: " + result.getInt)
   }
 }
