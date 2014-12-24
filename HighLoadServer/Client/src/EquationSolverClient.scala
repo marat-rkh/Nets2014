@@ -32,15 +32,14 @@ class EquationSolverClient(ip: InetAddress, port: Int) extends AutoCloseable {
     val buffer = ByteBuffer.allocate(EQUATIONS_NUMBER * COEFFICIENTS_NUMBER * INTEGER_BYTES)
     val bytes = coeffs.foldLeft(buffer)((buf, coeff) => buf.putInt(coeff)).array()
     out.write(bytes)
+    Utils.debug("Task has been sent")
   }
   private def readResponse() = {
+    Utils.debug("Start reading response")
     val buffer = new Array[Byte](EQUATIONS_NUMBER * Integer.SIZE)
-//    val result = ByteBuffer.allocate(EQUATIONS_NUMBER * Integer.SIZE)
-//    val buffer = new Array[Byte](1024)
-    while(in.read(buffer) != -1) {
-//      result.put(buffer)
+    while(in.read(buffer) > 0) {
+      Utils.debug("read")
     }
-//    result.clear()
-//    println("result: " + result.getInt)
+    Utils.debug("Response has been received")
   }
 }

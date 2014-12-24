@@ -26,6 +26,7 @@ object Main {
       // write to file for creating graph
       println(results)
     }
+    Utils.debug("All requests have been sent")
   }
 
   private def using[T <: AutoCloseable, S](res: => T)(f: T => S): S = {
