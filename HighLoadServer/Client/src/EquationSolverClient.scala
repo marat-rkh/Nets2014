@@ -32,32 +32,20 @@ class EquationSolverClient(ip: InetAddress, port: Int) extends AutoCloseable {
     val buffer = ByteBuffer.allocate(EQUATIONS_NUMBER * COEFFICIENTS_NUMBER * INTEGER_BYTES)
     val bytes = coeffs.foldLeft(buffer)((buf, coeff) => buf.putInt(coeff)).array()
     out.write(bytes)
+    Utils.debug("Task has been sent")
   }
   private def readResponse() = {
-    val buffer = new Array[Byte](EQUATIONS_NUMBER * Integer.SIZE)
-//    val result = ByteBuffer.allocate(EQUATIONS_NUMBER * Integer.SIZE)
-//    val buffer = new Array[Byte](1024)
-//    val needToRead = EQUATIONS_NUMBER * Integer.SIZE
-//    var readBytes = 0
-//    var reading = true
-//    while (reading) {
-//      val read = in.read(buffer)
-//      if (read == -1) {
-//        reading = false
-//      } else {
-//        readBytes += read
-//        if (readBytes >= needToRead) {
-//          reading = false
-//        }
-//      }
-
-//      result.put(buffer)
-    var flag = true
-    while (flag) {
+    Utils.debug("Start reading response")
+    val buffer = new Array[Byte](EQUATIONS_NUMBER * INTEGER_BYTES)
+    var hasNotReceivedEverything = true
+    var bytesReadSoFar = 0
+    while (hasNotReceivedEverything) {
       val read = in.read(buffer)
-      flag = ! (read == EQUATIONS_NUMBER * INTEGER_BYTES)
+      bytesReadSoFar += read
+      println(s"bytes_read: $bytesReadSoFar")
+      println(s"read: $read")
+      hasNotReceivedEverything = bytesReadSoFar < EQUATIONS_NUMBER * INTEGER_BYTES
     }
-//    result.clear()
-//    println("result: " + result.getInt)
+    Utils.debug("Response has been received")
   }
 }

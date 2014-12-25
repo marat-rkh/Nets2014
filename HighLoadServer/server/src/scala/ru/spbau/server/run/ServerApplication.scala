@@ -22,7 +22,7 @@ final class ServerApplication extends AbstractApplication {
 
   def maxTreadNumber = 4
 
-  def debug = true
+  def debug = false
 
   private val executor = Executors.newFixedThreadPool(maxTreadNumber)
   private val taskToSelectionKeyMapping = mutable.Map[UUID, SelectionKey]()
