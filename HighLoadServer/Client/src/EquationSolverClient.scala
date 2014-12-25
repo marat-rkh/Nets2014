@@ -17,8 +17,8 @@ class EquationSolverClient(ip: InetAddress, port: Int) extends AutoCloseable {
 
   def exchangeInfo(): Long = {
     val startTime = System.currentTimeMillis()
-    sendRandomTask()
-    readResponse()
+    val equationsNumber = sendRandomTask()
+    readResponse(equationsNumber)
     System.currentTimeMillis() - startTime
   }
 
@@ -37,10 +37,11 @@ class EquationSolverClient(ip: InetAddress, port: Int) extends AutoCloseable {
     out.write(sizeBytes)
     out.write(bytes)
     Utils.debug("Task has been sent")
+    equationsNumber
   }
-  private def readResponse() = {
+  private def readResponse(equationsNumber: Int) = {
     Utils.debug("Start reading response")
-    val buffer = new Array[Byte](EQUATIONS_NUMBER * INTEGER_BYTES)
+    val buffer = new Array[Byte](equationsNumber * INTEGER_BYTES)
     var hasNotReceivedEverything = true
     var bytesReadSoFar = 0
     while (hasNotReceivedEverything) {
