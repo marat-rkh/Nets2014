@@ -31,11 +31,8 @@ class EquationSolverClient(ip: InetAddress, port: Int) extends AutoCloseable {
     val MaxEquations = 150 * 2
     val equationsNumber = scala.math.abs(coeffsGenerator.nextInt() % MaxEquations + 1)
     val coeffs = List.tabulate(equationsNumber * COEFFICIENTS_NUMBER)(i => coeffsGenerator.nextInt())
-
-    println(equationsNumber)
     val buffer = ByteBuffer.allocate(equationsNumber * COEFFICIENTS_NUMBER * INTEGER_BYTES)
     val bytes = coeffs.foldLeft(buffer)((buf, coeff) => buf.putInt(coeff)).array()
-    // constant 10 for now
     val sizeBytes = ByteBuffer.allocate(4).putInt(equationsNumber).array()
     out.write(sizeBytes)
     out.write(bytes)
