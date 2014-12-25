@@ -22,16 +22,6 @@ case class EquationComputationTask(equationHolder: AbstractEquationHolder,
       i =>
         val eq = equationHolder(i)
         resultArray(i) = eq.solve
-        val d = eq.b * eq.b - 4 * eq.a * eq.c
-        if (d > 0) {
-          resultArray(i) = 2
-        }
-        if (d == 0) {
-          resultArray(i) = 1
-        }
-        if (d < 0) {
-          resultArray(i) = 0
-        }
     }
     val newTask = ResponseSendingTask(uuid, resultArray, app)
     app.d(s"Finished evaluating task $uuid")
