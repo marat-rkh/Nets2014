@@ -11,14 +11,14 @@ class EquationSolverClient(ip: InetAddress, port: Int) extends AutoCloseable {
   val in = socket.getInputStream
   val coeffsGenerator = new Random()
 
-  val EQUATIONS_NUMBER = 10
+  val EQUATIONS_NUMBER = 100
   val COEFFICIENTS_NUMBER = 3
   val INTEGER_BYTES = Integer.SIZE / 8
 
   def exchangeInfo(): Long = {
     val startTime = System.currentTimeMillis()
-    val equationsNumber = sendRandomTask()
-    readResponse(equationsNumber)
+    sendRandomTask()
+    readResponse()
     System.currentTimeMillis() - startTime
   }
 
@@ -28,20 +28,17 @@ class EquationSolverClient(ip: InetAddress, port: Int) extends AutoCloseable {
   }
 
   private def sendRandomTask() = {
-    val MaxEquations = 150 * 2
-    val equationsNumber = scala.math.abs(coeffsGenerator.nextInt() % MaxEquations + 1)
-    val coeffs = List.tabulate(equationsNumber * COEFFICIENTS_NUMBER)(i => coeffsGenerator.nextInt())
-    val buffer = ByteBuffer.allocate(equationsNumber * COEFFICIENTS_NUMBER * INTEGER_BYTES)
-    val bytes = coeffs.foldLeft(buffer)((buf, coeff) => buf.putInt(coeff)).array()
-    val sizeBytes = ByteBuffer.allocate(4).putInt(equationsNumber).array()
+    val coeffs = List.tabulate(EQUATIONS_NUMBER * COEFFICIENTS_NUMBER)(i => coeffsGenerator.nextInt())
+    val buffer = ByteBuffer.allocate(EQUATIONS_NUMBER * COEFFICIENTS_NUMBER * INTEGER_BYTES)
+    val data = coeffs.foldLeft(buffer)((buf, coeff) => buf.putInt(coeff)).array()
+    val sizeBytes = ByteBuffer.allocate(4).putInt(EQUATIONS_NUMBER).array()
     out.write(sizeBytes)
-    out.write(bytes)
+    out.write(data)
     Utils.debug("Task has been sent")
-    equationsNumber
   }
-  private def readResponse(equationsNumber: Int) = {
+  private def readResponse() = {
     Utils.debug("Start reading response")
-    val buffer = new Array[Byte](equationsNumber * INTEGER_BYTES)
+    val buffer = new Array[Byte](EQUATIONS_NUMBER * INTEGER_BYTES)
     var hasNotReceivedEverything = true
     var bytesReadSoFar = 0
     while (hasNotReceivedEverything) {
