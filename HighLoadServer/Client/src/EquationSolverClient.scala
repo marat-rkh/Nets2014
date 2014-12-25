@@ -55,7 +55,6 @@ class EquationSolverClient(ip: InetAddress, port: Int) extends AutoCloseable {
     var flag = true
     while (flag) {
       val read = in.read(buffer)
-      println(read)
       flag = ! (read == EQUATIONS_NUMBER * INTEGER_BYTES)
     }
 //    result.clear()

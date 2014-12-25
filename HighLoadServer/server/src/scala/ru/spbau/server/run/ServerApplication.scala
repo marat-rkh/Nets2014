@@ -1,15 +1,14 @@
 package ru.spbau.server.run
 
 import java.net.InetSocketAddress
-import java.nio.ByteBuffer
-import java.nio.channels.{SelectionKey, Selector, ServerSocketChannel, SocketChannel}
+import java.nio.channels.{SelectionKey, Selector, ServerSocketChannel}
 import java.util.UUID
 import java.util.concurrent.Executors
 
-import ru.spbau.server.holder.{AbstractDataHolder, EquationDataHolder}
-import ru.spbau.server.tasks.EquationComputationTask
+import ru.spbau.server.holder.AbstractDataHolder
+import ru.spbau.server.tasks.ClientReadTask
 
-import scala.math._
+import scala.collection.mutable
 
 /**
  * User: nikita_kartashov
@@ -26,14 +25,16 @@ final class ServerApplication extends AbstractApplication {
   def debug = true
 
   private val executor = Executors.newFixedThreadPool(maxTreadNumber)
-  @volatile private var taskToKeyMapping = Map[UUID, SelectionKey]()
-  @volatile private var dataReceiver = Map[SelectionKey, AbstractDataHolder]()
+  private val taskToSelectionKeyMapping = mutable.Map[UUID, SelectionKey]()
+  private val dataReceiver = mutable.Map[SelectionKey, AbstractDataHolder]()
 
   override def getExecutor = executor
 
-  override def getMapping = taskToKeyMapping.apply
+  override def getTaskToSelectionKeyMapping = taskToSelectionKeyMapping
 
-  def getAndRemoveDataHolder(key: SelectionKey) = {
+  override def getSelectionToHolderMap = dataReceiver
+
+  override def getAndRemoveDataHolder(key: SelectionKey) = {
     val result = dataReceiver.get(key)
     if (dataReceiver.contains(key)) {
       dataReceiver -= key
@@ -71,41 +72,7 @@ final class ServerApplication extends AbstractApplication {
   }
 
   def handleClientKey(key: SelectionKey) {
-    d("New data")
-    val bufferSize = EquationDataHolder.BufferSizeInBytes
-    val buffer = ByteBuffer.allocate(bufferSize)
-    val clientChannel = key.channel().asInstanceOf[SocketChannel]
-    if (key.isReadable) {
-      val readBytes = clientChannel.read(buffer)
-      d(s"Read $readBytes bytes")
-      if (readBytes > 0) {
-        if (!dataReceiver.contains(key)) {
-          dataReceiver += (key -> new EquationDataHolder())
-        }
-        val holder = dataReceiver(key)
-        holder.write(buffer, min(readBytes, holder.bytesTillFinished))
-        d(s"Left ${holder.bytesTillFinished} bytes")
-        if (holder.isFinished) {
-          // Remove holder, add task
-          val optionHolder = getAndRemoveDataHolder(key)
-          optionHolder match {
-            case Some(holder) =>
-              val newTask = EquationComputationTask(
-                holder.asInstanceOf[EquationDataHolder],
-                this)
-              taskToKeyMapping += (newTask.uuid -> key)
-              d("Filled data holder")
-              executor.execute(newTask)
-            case _ =>
-          }
-        }
-      }
-      if (readBytes < 0) {
-        d("Client connection closed")
-        getAndRemoveDataHolder(key)
-        key.cancel()
-      }
-    }
+    ClientReadTask(key, this).run()
   }
 
   def handleServerSelector(selector: Selector, key: SelectionKey) {

@@ -15,16 +15,16 @@ import ru.spbau.server.utils.BufferConversions._
 case class ResponseSendingTask(uuid: UUID, result: Array[Int], app: AbstractApplication) extends Runnable {
   override def run(): Unit = {
     app.d(s"Started sending task $uuid")
-    val clientKey = app.getMapping(uuid)
+    val clientKey = app.getTaskToSelectionKeyMapping(uuid)
     val writeBuffer:ByteBuffer = IntBuffer.wrap(result)
     Option(clientKey.channel()) match {
       case Some(channel) =>
         val socketChannel = channel.asInstanceOf[SocketChannel]
-//        while (writeBuffer.hasRemaining) {
+        while (writeBuffer.hasRemaining) {
           val written = socketChannel.write(writeBuffer)
-//          app.d(s"Written: $written")
-//          app.d(s"Position: ${writeBuffer.position}")
-//        }
+          app.d(s"Written: $written")
+          app.d(s"Position: ${writeBuffer.position}")
+        }
       case None =>
     }
     app.d(s"Sent task $uuid")
