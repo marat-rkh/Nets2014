@@ -3,7 +3,7 @@ from subprocess import Popen
 CLIENT_JAR_PATH = "../Client/out/artifacts/Client_jar/Client.jar"
 
 # client program args
-SERVER_IP = "127.0.0.1"
+SERVER_IP = "192.168.1.3"
 SERVER_PORT = "45213"
 EQUATIONS_NUM = 10
 
