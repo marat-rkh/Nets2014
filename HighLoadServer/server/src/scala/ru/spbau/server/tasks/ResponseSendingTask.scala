@@ -27,6 +27,7 @@ case class ResponseSendingTask(uuid: UUID, result: Array[Int], app: AbstractAppl
         }
       case None =>
     }
+    app.getTaskToSelectionKeyMapping -= uuid
     app.d(s"Sent task $uuid")
   }
 }

@@ -41,6 +41,7 @@ case class EquationHolderGenerator(app: AbstractApplication, key: SelectionKey) 
         val newEquationsHolder = BufferEquationHolder(newBytes, equationsNumber)
         val newTask = EquationComputationTask(newEquationsHolder, app)
         app.getTaskToSelectionKeyMapping += (newTask.uuid -> key)
+        app.d(s"Added task with id: ${newTask.uuid}")
         app.getExecutor.execute(newTask)
 
         start += sizeBytes + equationsSizeInBytes

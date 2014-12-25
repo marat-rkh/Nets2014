@@ -20,11 +20,11 @@ final class ServerApplication extends AbstractApplication {
 
   def localhost = "localhost"
 
-  def maxTreadNumber = 4
+  def maxThreadNumber = 4
 
   def debug = false
 
-  private val executor = Executors.newFixedThreadPool(maxTreadNumber)
+  private val executor = Executors.newFixedThreadPool(maxThreadNumber)
   private val taskToSelectionKeyMapping = mutable.Map[UUID, SelectionKey]()
   private val dataReceiver = mutable.Map[SelectionKey, AbstractDataReceiver]()
 
