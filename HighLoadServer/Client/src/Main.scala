@@ -5,12 +5,12 @@ import java.net.InetAddress
 
 object Main {
   def main(args: Array[String]) {
-    args.length > 2 match {
+    args.length > 3 match {
       case false =>
-        println("usage: <exec_name> <server_ip> <server_port> <equations_num>")
+        println("usage: <exec_name> <server_ip> <server_port> <equations_num> <log_file_name>")
       case true =>
         try {
-          runClient(args(0), Integer.parseInt(args(1)), Integer.parseInt(args(2)))
+          runClient(args(0), Integer.parseInt(args(1)), Integer.parseInt(args(2)), args(3))
         } catch {
           case e : Exception =>
             println("error: " + e.getMessage)
@@ -18,13 +18,15 @@ object Main {
     }
   }
 
-  private def runClient(ipStr: String, port: Int, equationsNum: Int) = {
-    using(new EquationSolverClient(InetAddress.getByName(ipStr), port, equationsNum)) { client =>
-      val res = client.exchangeInfo()
-      // write to file for creating graph
-      println(res)
+  private def runClient(ipStr: String, port: Int, equationsNum: Int, logFilePath: String) = {
+    val logger = new Logger(logFilePath)
+    using(new EquationSolverClient(InetAddress.getByName(ipStr),
+                                   port,
+                                   equationsNum,
+                                   logger))
+    {
+      client => client.exchangeInfo()
     }
-    Utils.debug("All requests have been sent")
   }
 
   private def using[T <: AutoCloseable, S](res: => T)(f: T => S): S = {
