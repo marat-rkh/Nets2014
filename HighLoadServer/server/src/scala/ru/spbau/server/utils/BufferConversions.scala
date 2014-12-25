@@ -2,7 +2,7 @@ package ru.spbau.server.utils
 
 import java.nio.{ByteBuffer, IntBuffer}
 
-import ru.spbau.server.holder.EquationDataHolder
+import ru.spbau.server.holder.EquationHolderGenerator
 
 /**
  * User: nikita_kartashov
@@ -11,7 +11,7 @@ import ru.spbau.server.holder.EquationDataHolder
  */
 object BufferConversions {
   implicit def asByteBuffer(buffer: IntBuffer): ByteBuffer = {
-    val byteBuffer = ByteBuffer.allocate(buffer.limit * EquationDataHolder.IntegerSizeInBytes)
+    val byteBuffer = ByteBuffer.allocate(buffer.limit * EquationHolderGenerator.IntegerSizeInBytes)
     byteBuffer.asIntBuffer().put(buffer.array())
     byteBuffer
   }

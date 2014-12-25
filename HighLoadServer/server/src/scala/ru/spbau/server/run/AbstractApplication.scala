@@ -4,7 +4,7 @@ import java.nio.channels.SelectionKey
 import java.util.UUID
 import java.util.concurrent.ExecutorService
 
-import ru.spbau.server.holder.AbstractDataHolder
+import ru.spbau.server.holder.AbstractDataReceiver
 
 import scala.collection.mutable
 
@@ -18,9 +18,9 @@ trait AbstractApplication {
 
   def getTaskToSelectionKeyMapping: mutable.Map[UUID, SelectionKey]
 
-  def getSelectionToHolderMap: mutable.Map[SelectionKey, AbstractDataHolder]
+  def getSelectionToHolderMap: mutable.Map[SelectionKey, AbstractDataReceiver]
 
-  def getAndRemoveDataHolder(key: SelectionKey): Option[AbstractDataHolder]
+  def getAndRemoveDataHolder(key: SelectionKey): Option[AbstractDataReceiver]
 
   // Means debug print
   def d(message: String): Unit

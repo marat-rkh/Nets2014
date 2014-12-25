@@ -5,7 +5,7 @@ import java.nio.channels.{SelectionKey, Selector, ServerSocketChannel}
 import java.util.UUID
 import java.util.concurrent.Executors
 
-import ru.spbau.server.holder.AbstractDataHolder
+import ru.spbau.server.holder.AbstractDataReceiver
 import ru.spbau.server.tasks.ClientReadTask
 
 import scala.collection.mutable
@@ -26,7 +26,7 @@ final class ServerApplication extends AbstractApplication {
 
   private val executor = Executors.newFixedThreadPool(maxTreadNumber)
   private val taskToSelectionKeyMapping = mutable.Map[UUID, SelectionKey]()
-  private val dataReceiver = mutable.Map[SelectionKey, AbstractDataHolder]()
+  private val dataReceiver = mutable.Map[SelectionKey, AbstractDataReceiver]()
 
   override def getExecutor = executor
 

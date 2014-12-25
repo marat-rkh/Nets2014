@@ -31,6 +31,9 @@ class EquationSolverClient(ip: InetAddress, port: Int) extends AutoCloseable {
     val coeffs = List.tabulate(EQUATIONS_NUMBER * COEFFICIENTS_NUMBER)(i => coeffsGenerator.nextInt())
     val buffer = ByteBuffer.allocate(EQUATIONS_NUMBER * COEFFICIENTS_NUMBER * INTEGER_BYTES)
     val bytes = coeffs.foldLeft(buffer)((buf, coeff) => buf.putInt(coeff)).array()
+    // constant 10 for now
+    val sizeBytes = ByteBuffer.allocate(4).putInt(10).array()
+    out.write(sizeBytes)
     out.write(bytes)
     Utils.debug("Task has been sent")
   }
