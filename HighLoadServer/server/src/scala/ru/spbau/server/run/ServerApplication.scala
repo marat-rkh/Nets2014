@@ -18,7 +18,7 @@ import scala.collection.mutable
 final class ServerApplication extends AbstractApplication {
   def port = 45213
 
-  def localhost = "192.168.1.3"
+  def localhost = "192.168.210.43"
 //  def localhost = "localhost"
 
   def maxThreadNumber = 4

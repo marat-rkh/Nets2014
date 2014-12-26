@@ -23,7 +23,7 @@ class EquationSolverClient(ip: InetAddress,
   val K_BEG_RESP = "beg_resp"
   val K_END_RESP = "end_resp"
 
-  def exchangeInfo(): Unit = {
+  def exchangeInfo(): Unit = {3
     val startTime = System.currentTimeMillis()
     sendRandomTask(startTime)
     readResponse(startTime)
