@@ -1,5 +1,6 @@
 import json
 import operator
+import matplotlib.pyplot as plt
 
 LOGS_DST_PATH = "./logs/"
 EQUATIONS_NUM_LIST = [50, 100, 200, 400]
@@ -7,6 +8,43 @@ EQUATIONS_NUM_LIST = [50, 100, 200, 400]
 #runner options
 TESTS_NUM = 3
 CLIENTS_NUM_LIST = xrange(1, 100, 10)
+
+
+# def get_vals(filePath):
+#     """
+#     {
+#         "gen_task" : time,
+#         "beg_send" : time,
+#         "end_send" : time,
+#         "beg_resp" : time,
+#         "end_resp" : time
+#     }
+#     """
+#     json_data = open(filePath)
+#     data = json.load(json_data)
+
+    # beg_send = long(data["beg_send"])
+    # end_send = long(data["end_send"])
+    # beg_resp = long(data["beg_resp"])
+    # end_resp = long(data["end_resp"])
+
+#     send_time = end_send - beg_send
+#     resp_time = end_resp - beg_resp
+#     full_time = end_resp
+
+#     json_data.close()
+
+#     return (send_time, resp_time, full_time)
+
+def my_json_load(filePath):
+    content = []
+    with open(filePath) as f:
+        content = f.readlines()
+    # throw braces away
+    content = content[1:len(content) - 1] 
+    no_commas = map(lambda s: s.rstrip(',\n'), content)
+    splitted = map(lambda s: s.split(' : '), no_commas)
+    return dict(splitted)
 
 def get_vals(filePath):
     """
@@ -18,20 +56,16 @@ def get_vals(filePath):
         "end_resp" : time
     }
     """
-    json_data = open(filePath)
-    data = json.load(json_data)
+    data = my_json_load(filePath)
 
     beg_send = long(data["beg_send"])
     end_send = long(data["end_send"])
     beg_resp = long(data["beg_resp"])
-    end_send = long(data["end_send"])
+    end_resp = long(data["end_resp"])
 
     send_time = end_send - beg_send
     resp_time = end_resp - beg_resp
-    full_time = end_resp
-
-    json_data.close()
-
+    full_time = end_resp - beg_send
     return (send_time, resp_time, full_time)
 
 def get_mean_vals(vals_list):
@@ -55,9 +89,15 @@ def run(tests_num, clients_num, equations_num):
 # main
 for eq_num in EQUATIONS_NUM_LIST:
     points = []
-    for clients_number in CLIENTS_NUM_LIST):
-        mean_vals = run(TESTS_NUM, clients_num, eq_num)
+    for clients_number in CLIENTS_NUM_LIST:
+        mean_vals = run(TESTS_NUM, clients_number, eq_num)
         points.append((clients_number, mean_vals))
     # draw
-    print points
-    print "\n"
+    xs = map(lambda t: t[0], points)
+    ys_send_time = map(lambda t: t[1][0], points)
+    ys_resp_time = map(lambda t: t[1][1], points)
+    ys_full_time = map(lambda t: t[1][2], points)
+    plt.plot(xs, ys_send_time, 'r', xs, ys_resp_time, 'b', xs, ys_full_time, 'g')
+    plt.ylabel('time')
+    plt.xlabel('clients number')
+    plt.show()
