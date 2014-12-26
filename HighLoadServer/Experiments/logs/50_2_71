@@ -1,7 +1,0 @@
-{
-gen_task : 0,
-beg_send : 6138,
-end_send : 6139,
-beg_resp : 6139,
-end_resp : 6200
-}
