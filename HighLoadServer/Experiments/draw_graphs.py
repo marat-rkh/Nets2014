@@ -2,7 +2,7 @@ import json
 import operator
 import matplotlib.pyplot as plt
 
-LOGS_DST_PATH = "./logs2/"
+LOGS_DST_PATH = "./logs/"
 EQUATIONS_NUM_LIST = [10, 50, 100, 200, 400, 600]
 
 #runner options

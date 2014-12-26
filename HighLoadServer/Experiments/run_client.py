@@ -2,7 +2,7 @@ from subprocess import Popen, call
 
 # paths
 CLIENT_JAR_PATH = "../Client/out/artifacts/Client_jar/Client.jar"
-LOGS_DST_PATH = "./logs2/"
+LOGS_DST_PATH = "./logs/"
 
 # client program args
 SERVER_IP = "192.168.1.3"
