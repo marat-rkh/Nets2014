@@ -6,7 +6,7 @@ import java.io._
 
 class Logger(filePath: String) extends AutoCloseable {
   val logWriter = new BufferedWriter(new FileWriter(filePath))
-  val DEBUG = true
+  val DEBUG = false
   val LOG = true
 
   var firstMsg = true
