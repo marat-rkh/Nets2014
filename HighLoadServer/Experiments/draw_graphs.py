@@ -68,7 +68,12 @@ for eq_num in EQUATIONS_NUM_LIST:
     plt.plot(xs, ys_send_time, 'b', label = 'request data sending')
     plt.plot(xs, ys_resp_time, 'r', label = 'waiting and reading response') 
     plt.plot(xs, ys_full_time, 'g', label = 'full (without request data generation)')
+
     plt.legend(title = 'Results for ' + str(eq_num) + ' equations task', loc = 'upper left')
+
+    plt.ylim(0, 100)
     plt.ylabel('time (ms)')
     plt.xlabel('clients number')
+    # plt.savefig(str(eq_num) + '_equations.png')
+    # plt.clf()
     plt.show()
