@@ -7,10 +7,11 @@ LOGS_DST_PATH = "./logs/"
 # client program args
 SERVER_IP = "192.168.1.3"
 SERVER_PORT = "45213"
-EQUATIONS_NUM_LIST = [50, 100, 200, 400]
+# EQUATIONS_NUM_LIST = [50, 100, 200, 400]
+EQUATIONS_NUM_LIST = [50]
 
 #runner options
-TESTS_NUM = 3
+TESTS_NUM = 1
 CLIENTS_NUM_LIST = xrange(1, 100, 10)
 
 def run(tests_num, clients_num, equations_num):
