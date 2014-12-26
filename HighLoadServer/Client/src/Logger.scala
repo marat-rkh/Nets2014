@@ -14,7 +14,7 @@ class Logger(filePath: String) extends AutoCloseable {
   logWriter.write("{\n")
 
   def log(title: String, msg: String) = {
-    val fullMsg = title + " : " + msg
+    val fullMsg = "\"" + title + "\"" + " : " + "\"" + msg + "\""
     if(LOG) {
       if(!firstMsg)
         logWriter.write(",\n")
