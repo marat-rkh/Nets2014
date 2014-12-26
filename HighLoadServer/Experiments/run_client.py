@@ -15,7 +15,6 @@ CLIENTS_NUM_LIST = xrange(1, 100)
 
 def run(tests_num, clients_num, equations_num):
     for i in xrange(0, tests_num):
-        print "# test " + str(i)
         processes = []
         for j in xrange(0, clients_num):
             logPath = LOGS_DST_PATH + str(equations_num) + "_" + str(i) + "_" + str(j)
@@ -29,5 +28,5 @@ def run(tests_num, clients_num, equations_num):
 call(["mkdir", "-p", LOGS_DST_PATH])
 for eq_num in EQUATIONS_NUM_LIST:
     print "# equations num: " + str(eq_num)
-    for clients_number in CLIENTS_NUM_LIST):
-        run(TESTS_NUM, clients_num, eq_num)
+    for clients_number in CLIENTS_NUM_LIST:
+        run(TESTS_NUM, clients_number, eq_num)
