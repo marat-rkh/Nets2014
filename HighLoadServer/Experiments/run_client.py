@@ -1,11 +1,11 @@
-from subprocess import Popen
+from subprocess import Popen, call
 
 # paths
-CLIENT_JAR_PATH = "/home/mrx/GitRepos/Nets2014/HighLoadServer/Client/out/artifacts/Client_jar/Client.jar"
-LOGS_DST_PATH = "/home/mrx/GitRepos/Nets2014/HighLoadServer/Experiments/logs/"
+CLIENT_JAR_PATH = "../Client/out/artifacts/Client_jar/Client.jar"
+LOGS_DST_PATH = "./logs/"
 
 # client program args
-SERVER_IP = "127.0.0.1"
+SERVER_IP = "192.168.1.3"
 SERVER_PORT = "45213"
 EQUATIONS_NUM = 10
 
@@ -26,4 +26,5 @@ def run(tests_num, clients_num, equations_num):
             
 
 # main
+call(["mkdir", "-p", LOGS_DST_PATH])
 run(TESTS_NUM, CLIENTS_NUM, EQUATIONS_NUM)
