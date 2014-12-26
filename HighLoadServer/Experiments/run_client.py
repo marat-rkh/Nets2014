@@ -7,15 +7,15 @@ LOGS_DST_PATH = "./logs/"
 # client program args
 SERVER_IP = "192.168.1.3"
 SERVER_PORT = "45213"
-EQUATIONS_NUM = 10
+EQUATIONS_NUM_LIST = [50, 100, 200, 400]
 
 #runner options
-TESTS_NUM = 1
-CLIENTS_NUM = 10
+TESTS_NUM = 3
+CLIENTS_NUM_LIST = xrange(1, 100)
 
 def run(tests_num, clients_num, equations_num):
     for i in xrange(0, tests_num):
-        print "test " + str(i)
+        print "# test " + str(i)
         processes = []
         for j in xrange(0, clients_num):
             logPath = LOGS_DST_PATH + str(equations_num) + "_" + str(i) + "_" + str(j)
@@ -27,4 +27,7 @@ def run(tests_num, clients_num, equations_num):
 
 # main
 call(["mkdir", "-p", LOGS_DST_PATH])
-run(TESTS_NUM, CLIENTS_NUM, EQUATIONS_NUM)
+for eq_num in EQUATIONS_NUM_LIST:
+    print "# equations num: " + str(eq_num)
+    for clients_number in CLIENTS_NUM_LIST):
+        run(TESTS_NUM, clients_num, eq_num)
