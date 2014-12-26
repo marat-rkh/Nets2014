@@ -2,8 +2,8 @@ import json
 import operator
 import matplotlib.pyplot as plt
 
-LOGS_DST_PATH = "./logs/"
-EQUATIONS_NUM_LIST = [50, 100, 200, 400]
+LOGS_DST_PATH = "./logs2/"
+EQUATIONS_NUM_LIST = [10, 50, 100, 200, 400, 600]
 
 #runner options
 TESTS_NUM = 3
@@ -65,7 +65,15 @@ for eq_num in EQUATIONS_NUM_LIST:
     ys_send_time = map(lambda t: t[1][0], points)
     ys_resp_time = map(lambda t: t[1][1], points)
     ys_full_time = map(lambda t: t[1][2], points)
-    plt.plot(xs, ys_send_time, 'r', xs, ys_resp_time, 'b', xs, ys_full_time, 'g')
-    plt.ylabel('time')
+    plt.plot(xs, ys_send_time, 'b', label = 'request data sending')
+    plt.plot(xs, ys_resp_time, 'r', label = 'waiting and reading response') 
+    plt.plot(xs, ys_full_time, 'g', label = 'full (without request data generation)')
+
+    plt.legend(title = 'Results for ' + str(eq_num) + ' equations task', loc = 'upper left')
+
+    plt.ylim(0, 100)
+    plt.ylabel('time (ms)')
     plt.xlabel('clients number')
+    # plt.savefig(str(eq_num) + '_equations.png')
+    # plt.clf()
     plt.show()
