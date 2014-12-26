@@ -37,38 +37,6 @@ def get_vals(filePath):
 
     return (send_time, resp_time, full_time)
 
-# def my_json_load(filePath):
-#     content = []
-#     with open(filePath) as f:
-#         content = f.readlines()
-#     # throw braces away
-#     content = content[1:len(content) - 1] 
-#     no_commas = map(lambda s: s.rstrip(',\n'), content)
-#     splitted = map(lambda s: s.split(' : '), no_commas)
-#     return dict(splitted)
-
-# def get_vals(filePath):
-#     """
-#     {
-#         "gen_task" : time,
-#         "beg_send" : time,
-#         "end_send" : time,
-#         "beg_resp" : time,
-#         "end_resp" : time
-#     }
-#     """
-#     data = my_json_load(filePath)
-
-#     beg_send = long(data["beg_send"])
-#     end_send = long(data["end_send"])
-#     beg_resp = long(data["beg_resp"])
-#     end_resp = long(data["end_resp"])
-
-#     send_time = end_send - beg_send
-#     resp_time = end_resp - beg_resp
-#     full_time = end_resp - beg_send
-#     return (send_time, resp_time, full_time)
-
 def get_mean_vals(vals_list):
     zero = (0, 0, 0)
     acc = reduce(lambda a, b: tuple(map(operator.add, a, b)), vals_list, zero)
