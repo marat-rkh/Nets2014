@@ -12,7 +12,7 @@ EQUATIONS_NUM_LIST = [50]
 
 #runner options
 TESTS_NUM = 1
-CLIENTS_NUM_LIST = xrange(1, 100, 10)
+CLIENTS_NUM_LIST = xrange(10, 101, 10)
 
 def run(tests_num, clients_num, equations_num):
     for i in xrange(0, tests_num):

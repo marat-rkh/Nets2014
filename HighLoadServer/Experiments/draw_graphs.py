@@ -7,7 +7,7 @@ EQUATIONS_NUM_LIST = [50, 100, 200, 400]
 
 #runner options
 TESTS_NUM = 3
-CLIENTS_NUM_LIST = xrange(1, 100, 10)
+CLIENTS_NUM_LIST = xrange(10, 101, 10)
 
 
 # def get_vals(filePath):
