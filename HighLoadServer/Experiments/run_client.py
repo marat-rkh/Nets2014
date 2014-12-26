@@ -11,7 +11,7 @@ SERVER_PORT = "45213"
 EQUATIONS_NUM_LIST = [50]
 
 #runner options
-TESTS_NUM = 1
+TESTS_NUM = 3
 CLIENTS_NUM_LIST = xrange(10, 101, 10)
 
 def run(tests_num, clients_num, equations_num):
